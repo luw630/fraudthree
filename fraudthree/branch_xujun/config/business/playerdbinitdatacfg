@@ -1,0 +1,57 @@
+info = {
+	rid = 0,
+	rolename = "游客",
+	logo = "1",
+	country = "",
+	province ="",
+	phone = "",
+	--true 男, false 女
+	sex = 0,
+}
+
+playgame = {
+	rid = 0,
+    winnum = 0,  --胜局 
+    losenum = 0, --败局
+    offlinenum = 0, --断线次数
+    continuewinnum = 0,--连胜次数
+    laststatus = 0,--上局输赢状态
+}
+
+money = {
+    rid = 0,
+	coin = 100000,
+	maxcoin = 100000,	
+}
+
+online = {
+    rid = 0,
+	activetime = 0, 
+	onlinetime = 0, --上线时间
+	roomsvr_id = "",
+	roomsvr_table_id = 0,
+	roomsvr_table_address = -1,
+	gatesvr_ip = "",
+	gatesvr_port = 0,
+	gatesvr_id = "",
+	gatesvr_service_address = -1,
+}
+
+mailinfos = {
+	mail_key = "",
+	rid = 0,
+	create_time = 0,
+	isattach = 0,
+	content = "",
+	reason = 0,
+}
+
+
+
+resultinfos = {
+	result_key = 0,
+	rid = 0,
+	room_name = 0,
+	create_time = 0,
+	players_name_coin_winlose = "",
+}

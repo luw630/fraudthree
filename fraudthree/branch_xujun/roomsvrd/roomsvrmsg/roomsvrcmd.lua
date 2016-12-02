@@ -26,6 +26,7 @@ function RoomsvrCMD.start(conf)
 	server.friend_table_id = math.floor(server.friend_table_id * 100000)
 
 	msghelper:set_idle_table_pool(conf)
+	msghelper:initredisdb(conf)
 
 	--通知tablesvrd自己初始化
 	msgproxy.sendrpc_broadcastmsgto_tablesvrd("init", skynet.getenv("svr_id"))
@@ -33,6 +34,8 @@ function RoomsvrCMD.start(conf)
 	--初始化桌子列表
 	msghelper:loadroomtablecfg()
 
+	--恢复朋友
+	msghelper:queryfriendtabledata()
 	base.skynet_retpack(true)
 
 	msghelper:start_time_tick()	

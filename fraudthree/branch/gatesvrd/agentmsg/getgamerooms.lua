@@ -49,7 +49,7 @@ function  GetGameRooms.process(session, source, fd, request)
 			errcodedes = "无效的请求!"
 		}
 	end
-
+	--filelog.sys_info("GetGameRoomsRes",responsemsg)
 	msghelper:send_resmsgto_client(fd, "GetGameRoomsRes", responsemsg)
 end
 

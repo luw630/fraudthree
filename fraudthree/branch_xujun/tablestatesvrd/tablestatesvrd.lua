@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local msghelper = require "tablestatesvrhelper"
 local base = require "base"
 local serverbase = require "serverbase"
+local tabletool = require "tabletool"
 local table = table
 require "enum"
 require "skynet.manager"
@@ -46,6 +47,7 @@ local function build_tableplayernum_indexs()
 			end
 		end
 	end
+	print("build_tableplayernum_indexs "..tabletool.getn(t[1]))
 	return t
 end
 
@@ -104,7 +106,7 @@ local TableStatesvrd = serverbase:new({
 			}
 		]]
 	},
-
+	roomsvrsdata = {},
 	--和桌子人数对应的索引
 	tableplayernumindexs = build_tableplayernum_indexs(),
 })

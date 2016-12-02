@@ -81,10 +81,11 @@ function  SitdownTable.process(session, source, fd, request)
 		sex = server.info.sex,
 	}	
 
-	print("SitdownTable.process rid "..server.rid.."  money  "..server.money.coin)
+	
 
 	processing:set_process_state(true)
-	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, server.roomsvr_id, server.roomsvr_table_address, "sitdowntable", request)
+	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, server.roomsvr_id, "gameroom"..request.id, "sitdowntable", request)
+	--responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, server.roomsvr_id, server.roomsvr_table_address, "sitdowntable", request)
 	processing:set_process_state(false)
 
 	if not msghelper:is_login_success() then
@@ -107,6 +108,7 @@ function  SitdownTable.process(session, source, fd, request)
 			server.online.roomsvr_id = server.roomsvr_id
 			server.online.roomsvr_table_id = server.roomsvr_table_id
 			server.online.roomsvr_table_address = server.roomsvr_table_address
+			server.online.room_type = seatinfo.room_type
 			playerdatadao.save_player_online("update", server.rid, server.online)
 		end
 	end 

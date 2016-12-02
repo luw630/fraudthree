@@ -61,7 +61,7 @@ function  Doaction.process(session, source, fd, request)
 	end
 
 	if server.roomsvr_id ~= request.roomsvr_id 
-		or server.roomsvr_table_address ~= request.roomsvr_table_address
+		--or server.roomsvr_table_address ~= request.roomsvr_table_address
 		or server.roomsvr_table_id ~= request.id then
 		responsemsg.errcode = EErrCode.ERR_INVALID_PARAMS
 		responsemsg.errcodedes = "无效的参数！"
@@ -71,7 +71,15 @@ function  Doaction.process(session, source, fd, request)
 
 	request.rid = server.rid
 	processing:set_process_state(true)
-	responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "doaction", request)
+	responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, "gameroom"..server.roomsvr_table_id, "doaction", request)
+	-- if server.online.room_type == ERoomType.ROOM_TYPE_COMMON then
+	-- 	responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, "gameroom"..server.roomsvr_table_id, "doaction", request)
+	-- else
+	-- 	responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "doaction", request)
+	-- end
+	
+	
+	--responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "doaction", request)
 	processing:set_process_state(false)
 
 	if not msghelper:is_login_success() then

@@ -41,12 +41,20 @@ function  LoginsvrLogin.process(session, source, fd, request)
 	}
 	local server = msghelper:get_server()
 	server.uid = request.uid
+	
+	local status, rid = playerlogindao.query_player_rid(request.uid)
+	if not status then
+		responsemsg.errcode = EErrCode.ERR_ACCESSDATA_FAILED
+		responsemsg.errcodedes = "登陆访问数据失败！"
+		msghelper:send_resmsgto_client(fd, "LoginRes", responsemsg)
+		server:exit_agent()
+		return
+	end
 
-	local status,rid = playerlogindao.query_player_rid(request.uid)
 	local nowtime = timetool.get_time()
 	local isreg = 0
-	if not status then
-		status,rid = playerlogindao.get_newplayer_rid(request.uid)
+	if rid == nil then
+		status, rid = playerlogindao.get_newplayer_rid(request.uid)
 		if rid == nil then
 			responsemsg.errcode = EErrCode.ERR_ACCESSDATA_FAILED
 			responsemsg.errcodedes = "登陆访问数据失败！"

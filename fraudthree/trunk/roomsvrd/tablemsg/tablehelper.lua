@@ -32,15 +32,20 @@ function TablesvrHelper:sendmsg_to_alltableplayer(msgname, msg, ...)
     end
 end
 
-function TablesvrHelper:sendmsg_to_tableplayer(seat, msgname, ...)
-    if seat.state ~= ESeatState.SEAT_STATE_NO_PLAYER and seat.gatesvr_id ~= "" then
-        msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, msgname, ...)
+function TablesvrHelper:sendmsg_to_tableplayer(seat, msgname, msg, ...)   --noticemsg
+    filelog.sys_error("******************************")
+    --local noticemsg = ...
+    filelog.sys_error("the seat.state,the seat.gatesvr_id",seat.state,seat.gatesvr_id)
+    if (seat.state ~= ESeatState.SEAT_STATE_NO_PLAYER) and (seat.gatesvr_id ~= "") then   --状态没错，服务名称没错
+        filelog.sys_error("进入sendmsg_to_tableplayer")
+        filelog.sys_error("msg infomation:",msg)
+        msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, msgname, msg,...)
     end
 end
 
-function TablesvrHelper:sendmsg_to_waitplayer(wait, msgname, ...)
+function TablesvrHelper:sendmsg_to_waitplayer(wait, msgname, msg, ...)
     if wait.gatesvr_id ~= "" then
-        msgproxy.sendrpc_noticemsgto_gatesvrd(wait.gatesvr_id, wait.agent_address, msgname, ...)
+        msgproxy.sendrpc_noticemsgto_gatesvrd(wait.gatesvr_id, wait.agent_address, msgname, msg, ...)
     end
 end
 
@@ -235,11 +240,11 @@ end
 ---------------------------------------xj-----------
 function TablesvrHelper:DBinsert_player_game_result(tableoj)
    
-   local record_sit_seat = tableoj.conf.start_game_player_info   --{同桌rid,同桌名字}
+   local record_sit_seat = tableoj.start_game_player_info   --{同桌rid,同桌名字}
    local creator_name = tableoj.conf.create_user_rolename        --创建者的名字
    local rid = tableoj.create_user_rid                     --创建者rid
    local creat_time = tableoj.conf.create_time            --创建时间
-   local coin_realize = tableoj.conf.coin_realize --获取烙有rid的金币包{rid=money}
+   local coin_realize = tableoj.coin_realize --获取烙有rid的金币包{rid=money}
    local room_type = tableoj.conf.room_type
    
    -- filelog.sys_info("房间名字：", creator_name )

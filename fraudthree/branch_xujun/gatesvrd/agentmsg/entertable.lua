@@ -62,16 +62,19 @@ function  EnterTable.process(session, source, fd, request)
 	request.rid = server.rid
 	request.gatesvr_id = skynet.getenv("svr_id")
 	request.agent_address = skynet.self()
+	filelog.sys_error("进入桌子获取agent_address：",request.agent_address)
 	request.playerinfo = {
 		rolename = server.info.rolename,
 		logo = server.info.logo,
 		sex = server.info.sex,
 	}	
 
-	
+	msghelper:set_enterging_state(true)
 	processing:set_process_state(true)
+	--responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, "friend"..request.id, "entertable", request)
 	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "entertable", request)
 	processing:set_process_state(false)
+	msghelper:set_enterging_state(false)
 
 	if not msghelper:is_login_success() then
 		return

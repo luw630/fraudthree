@@ -23,6 +23,7 @@ message GateSvrItem {
 	optional int32 port = 2;
 	optional int32 updatetime = 3;
 	optional int32 onlinenum = 4;
+	optional string gamegates = 5;
 }
 
 message PlayerBaseinfo {
@@ -131,6 +132,7 @@ message GameInfo {
 	optional int32 game_turns= 26;     			 //记录当前第几圈
 	optional int32 force_overturns= 27;     			 //强制结束的圈数
 	optional int32 table_makers = 28;   				//庄家
+	optional int32 all_bets = 29;   				//当前桌子总投注
 
 }
 
@@ -678,6 +680,7 @@ message RequestSitTableNtc {
 	optional int32  roomsvr_table_address = 4; //桌子的服务器地址
 	optional string quest_rolename = 5; // 请求的玩家
 	optional int32 quest_rid = 6; // 请求的玩家rid
+	optional int32 create_table_id = 7; //创建的table id
 }
 
 
@@ -703,44 +706,3 @@ message PlayerTableMessageNtc {
 	optional int32 chat_type = 4; //聊天类型(备用)
 }
 
-
-
-
-message BackupSeatInfo {
-	optional int32 rid = 1;
-	optional int32 index = 2;
-	optional int32 state = 3;
-	optional int32 timeout_count = 4;
-	optional int32 win = 5;
-	optional int32 seecards = 6;
-	optional int32 autocall = 7;
-	optional int32 coin = 8;
-	optional string gatesvr_id = 9; 
-	optional int32 agent_address = 10;
-	optional int32 timeout_fold = 11;
-	optional int32 is_tuoguan = 12;
-	repeated CardInfo cards = 13;
-	repeated TablePlayerInfo tableplayerinfos = 14;
-}
-
-message Backuptabledata {
-	optional int32 id = 1;    //桌子ID
-	optional string name = 2;      //桌子名称 地址
-	optional int32 state = 3;
-	optional int32 action_seat_index = 4;
-	optional int32 action_to_time = 5;
-	optional int32 action_type = 6;
-	optional int32 cur_bets = 7;
-	optional int32 all_bets = 8;
-	optional int32 rush_seat_index = 9;
-	optional int32 rush_bets = 10;
-	optional int32 turns = 11;
-	optional int32 turns_startindex = 12;
-	optional int32 end_delete = 13;
-	optional int32 playernum = 14;
-	optional int32 makers = 15;
-	optional int32 timer_id = 16;
-	optional int32 delete_table_timer_id = 17;
-	optional int32 sitdown_player_num = 18;
-	repeated BackupSeatInfo seats = 19;
-}

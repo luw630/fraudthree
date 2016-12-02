@@ -27,6 +27,7 @@ function RoomTableLogic.init(tableobj, conf, roomsvr_id)
 	local seatobj = require("object.seatobj")
 	local seat
 	local count = 1
+	filelog.sys_error("******the max_player_num:"..conf.max_player_num)
     while count <= conf.max_player_num do
     	seat = seatobj:new({
 
@@ -70,6 +71,12 @@ function RoomTableLogic.init(tableobj, conf, roomsvr_id)
 	tableobj.makers = 0   --庄家
 	tableobj.playernum = 0 --玩家数量
 	
+	--xj--如果为朋友桌就添加
+	if conf.room_type == 2 then 
+		tableobj.coin_realize = {}--钱袋子
+		tableobj.start_game_player_info = {}--刚开始新的一局的参赛的rid记录
+	end
+	--xj--
 
 	local roomgamelogic = msghelper:get_game_logic()	
 	local game = require("object.gameobj")
@@ -174,13 +181,16 @@ function RoomTableLogic.passive_leavetable(tableobj, rid, is_sendto_client)
 		is_sendto_client = is_sendto_client,
 		rid = rid,
 	}
+	filelog.sys_error("RoomTableLogic passive_leavetable")
 	msghelper:sendmsg_to_waitplayer(tableobj.waits[rid], "leavetable", leavetablemsg)
 	tableobj.waits[rid] = nil	
 end
 
 function RoomTableLogic.leavetable(tableobj, request, seat)
 	tableobj.waits[request.rid] = nil
-	local leavetablentc = {rid = request.rid}
+	local leavetablentc = {
+		rid = request.rid
+	}
 	msghelper:sendmsg_to_alltableplayer("LeaveTableNtc",leavetablentc)
 end
 
@@ -198,9 +208,8 @@ function RoomTableLogic.sitdowntable(tableobj, request, seat)
 	seat.playerinfo.sex=request.playerinfo.sex
 	seat.state = ESeatState.SEAT_STATE_WAIT_START
 	seat.coin = request.coin
+	seat.getcoin = seat.coin
 	
-
-	seat.ready_to_time = timetool.get_time() + tableobj.conf.ready_timeout
 
 	local noticemsg = {
 		rid = seat.rid,
@@ -241,24 +250,47 @@ end
 
 function RoomTableLogic.passive_standuptable(tableobj, seat, reason)
 	local roomgamelogic = msghelper:get_game_logic()
-
-	if not RoomTableLogic.is_onegameend(tableobj) then
+	filelog.sys_error("进入中途退出")
+	if not RoomTableLogic.is_onegameend(tableobj) then --一局游戏结束，is_onegameeend返回ture
+		filelog.sys_error("游戏没结束")
 		if roomgamelogic.is_ingame(tableobj.gamelogic,seat) == true then
 			roomgamelogic.onstanduptable(tableobj.gamelogic,seat)
 			seat.state = ESeatState.SEAT_STATE_ESCAPE
 		end
 	end
 
-	tableobj.sitdown_player_num = tableobj.sitdown_player_num - 1 
 
-	--通知agent清除座位号
-	msghelper:sendmsg_to_tableplayer(seat, "standuptable",
-									 {
-									 	rid=seat.rid,
-									 	roomsvr_seat_index = seat.index,
-									 	roomsvr_table_id = tableobj.conf.id,
-									 	roomsvr_id = tableobj.svr_id,
-									 })	
+-- --座位状态
+-- ESeatState = {
+-- 	SEAT_STATE_UNKNOW = 0,
+-- 	SEAT_STATE_NO_PLAYER = 1,  --没有玩家
+-- 	SEAT_STATE_WAIT_START = 2, --等待开局
+-- 	SEAT_STATE_STANDUP = 3,    --站起
+-- 	SEAT_STATE_ESCAPE = 4, 		--逃跑
+-- 	SEAT_STATE_PLAYING  = 5,   --正在游戏中
+-- 	SEAT_STATE_CALL = 6,       --跟注
+-- 	SEAT_STATE_RAISE = 7,		--加注
+-- 	SEAT_STATE_RUSH = 8,		--血拼
+-- 	SEAT_STATE_FOLD = 9,       --弃牌
+-- 	SEAT_STATE_LOSE = 10,     --比牌后等待下局游戏
+-- }
+
+	filelog.sys_error("玩家座位状态seat.state:",seat.state)   --为2
+	filelog.sys_error("玩家座位上的gatesvr_id",seat.gatesvr_id) --为gate_1
+	filelog.sys_error("玩家座位上agent_address",seat.agent_address)
+	filelog.sys_error("在游戏结束状态，开始通知站起")
+	tableobj.sitdown_player_num = tableobj.sitdown_player_num - 1 
+	
+	local noticemsg1 = {
+		rid = seat.rid, 
+		roomsvr_seat_index = seat.index,
+		roomsvr_table_id = tableobj.id,    ---此处获取conf.id为空
+		roomsvr_id = tableobj.svr_id,
+	}
+	--通知agent清除座位号,在agentnotice---------------------
+	filelog.sys_error("*********the noticemsg1",noticemsg1)
+	msghelper:sendmsg_to_tableplayer(seat, "standuptable", noticemsg1)	
+
 
 	local noticemsg = {
 		rid = seat.rid, 
@@ -266,7 +298,8 @@ function RoomTableLogic.passive_standuptable(tableobj, seat, reason)
 		state = seat.state,
 		reason = reason,
 	}
-	msghelper:sendmsg_to_alltableplayer("StandupTableNtc", noticemsg)
+	filelog.sys_error("通知座位上的所有人，某玩家站起")
+	msghelper:sendmsg_to_alltableplayer("StandupTableNtc", noticemsg) --同知座位上的人，某位玩家离开
 
 	seat.state = ESeatState.SEAT_STATE_NO_PLAYER
 
@@ -275,18 +308,17 @@ function RoomTableLogic.passive_standuptable(tableobj, seat, reason)
 			playerinfo = {},
 		}
 		tableobj.waits[seat.rid] = waitinfo
-
 		waitinfo.rid = seat.rid
 		waitinfo.gatesvr_id = seat.gatesvr_id
 		waitinfo.agent_address = seat.agent_address
 		waitinfo.playerinfo.rolename=seat.playerinfo.rolename
 		waitinfo.playerinfo.logo=seat.playerinfo.rolename
 		waitinfo.playerinfo.sex=seat.playerinfo.sex
+		waitinfo.coin = seat.coin
 	end
 
 	--初始化座位数据
 	roomgamelogic.standup_clear_seat(tableobj.gamelogic, seat)
-
 	msghelper:report_table_state()
 end
 
@@ -337,13 +369,26 @@ function RoomTableLogic.get_all_playernum(tableobj )
 end
 
 function RoomTableLogic.startgame(tableobj, request)
+	--//开始游戏前判断桌子的reload标志
+	---xj---right
+	if tableobj.conf.room_type == 1 then
+		local server = msghelper:get_server()
+		local table_data = server.table_data
+		if tableobj.is_reload == true then
+			tableobj.conf = tabletool.deepcopy(table_data.reload_conf)
+			tableobj.is_reload = false
+			msghelper:report_table_state()
+		end
+	end
+	---xj---
+
 	if RoomTableLogic.is_canstartgame(tableobj) then
 		local roomgamelogic = msghelper:get_game_logic()
 		tableobj.state = ETableState.TABLE_STATE_GAME_START
 		RoomTableLogic.randCardListForSeat(tableobj)
 		roomgamelogic.run(tableobj.gamelogic)
 	else
-		if request.type == EGameStartType.GAME_START_BYSERVER then  
+		if request.type == EGameStartType.GAME_START_BYSERVER then   --定时器触发
 			if tableobj.timer_id >= 0 then
 				timer.cleartimer(tableobj.timer_id)
 			end
@@ -442,13 +487,16 @@ end
 
 --判断当前是否能够开始游戏
 function RoomTableLogic.is_canstartgame(tableobj)
+	
 	for _, seat in ipairs(tableobj.seats) do
 		if seat.state == ESeatState.SEAT_STATE_WAIT_START then
 			if seat.coin < tableobj.conf.min_carry_coin then
+				filelog.sys_error("玩家金币不满足入座条件:"..seat.rid)
 				RoomTableLogic.passive_standuptable(tableobj, seat, EStandupReason.STANDUP_REASON_MONEYNOTENOUGH)
 			end
 		end
 	end
+
 	return tableobj.sitdown_player_num >= tableobj.conf.min_player_num
 end
 
@@ -460,7 +508,6 @@ function RoomTableLogic.is_gameend(tableobj)
 		or tableobj.state == ETableState.TABLE_STATE_GAME_END then
 		return true
 	end
-
 	return false
 end
 
@@ -528,8 +575,17 @@ end
 
 
 function RoomTableLogic.changeMoney(tableobj, seat,changevalue,reason )
-	if tableobj.conf.room_type == 2 then 									---如果是朋友桌则执行
-		tableobj.conf.coin_realize[seat.rid] =  tableobj.conf.coin_realize[seat.rid] + changevalue
+	if tableobj.conf.room_type == 2 then 
+		if tableobj.coin_realize == nil then
+			filelog.sys_error("RoomTableLogic.changeMoney tableobj.conf.coin_realize  nil")
+		end
+		if 	tableobj.coin_realize[seat.rid]  == nil then
+			filelog.sys_error("RoomTableLogic.changeMoney tableobj.conf.coin_realize[seat.rid] nil ")
+		end
+		if seat == nil then
+			filelog.sys_error("RoomTableLogic.changeMoney seat nil ")
+		end								
+		tableobj.coin_realize[seat.rid] =  tableobj.coin_realize[seat.rid] + changevalue
 	end
 	local beforecoin = seat.coin
 	if seat.coin + changevalue >= 0 then
@@ -538,7 +594,21 @@ function RoomTableLogic.changeMoney(tableobj, seat,changevalue,reason )
 		seat.coin = 0
 		filelog.sys_error("RoomTableLogic.changeMoney Error",seat.rid,changevalue)
 	end
-	gamelog.write_player_coinlog(seat.rid, reason, ECurrencyType.CURRENCY_TYPE_COIN, changevalue, beforecoin, seat.coin)
+
+end
+
+----金币日志 key = tableid+roomsvrd_id+time+skynet.self()
+function RoomTableLogic.changePlayerMoney( tableobj, seat,changevalue,beforetotal, aftertotal,reason,isendgame ,iswaitplayer)
+	local key = tableobj.id..tableobj.svr_id..timetool.get_time()..skynet.self()
+
+	gamelog.write_player_coinlog(seat.rid, reason, ECurrencyType.CURRENCY_TYPE_COIN, changevalue, beforetotal, aftertotal,key)
+	local noticemsg = 
+	{
+		rid = seat.rid,
+		win_money =  changevalue,
+		isendgame = isendgame,
+	}
+	msghelper:sendmsg_to_tableplayer(seat, "gameresult", noticemsg)	
 end
 
 --为每个玩家发牌
@@ -563,7 +633,11 @@ function RoomTableLogic.reload(tableobj,conf)
 	if RoomTableLogic.is_onegameend(tableobj) then
 		tableobj.conf = tabletool.deepcopy(conf)
 		tableobj.is_reload = false
+		msghelper:report_table_state()
 	end
-end
 
+	--设置一个桌子tag，有reload信号来了并且reload成功了将该Tag置flase，因为正在游戏中没有reload保持true
+	--开始游戏前判断该状态，如果为true需要reload
+	
+end
 return RoomTableLogic

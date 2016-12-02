@@ -38,7 +38,7 @@ conf = {
 	....
 }
 ]]
-function TableCMD.start(conf, roomsvr_id, id)
+function TableCMD.start(conf, roomsvr_id, id,create_table_id)
 	if conf == nil or roomsvr_id == nil then
 		filelog.sys_error(filename.."conf == nil or roomsvr_id == nil")
 		base.skynet_retpack(false)
@@ -49,14 +49,21 @@ function TableCMD.start(conf, roomsvr_id, id)
 		conf.id = id
 	end
 
+	if create_table_id ~= nil then
+		conf.create_table_id = create_table_id
+	end
+
 	local server = msghelper:get_server()
 
 	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 
+
 	roomtablelogic.init(server.table_data, conf, roomsvr_id)	
     --上报状态
+    	msghelper:initpbc()
+    	msghelper:quest_recovery()
     	msghelper:report_table_state()
-	msghelper:quest_recovery()
+	
 	base.skynet_retpack(true)
 end
 
@@ -100,7 +107,7 @@ function TableCMD.delete(...)
 		table_data.end_delete = 1     --设置删除桌子的标志，等待游戏结束
 		return
 	end
-
+	filelog.sys_info("TableCMD.delete",table_data.create_table_id)
 	msgproxy.sendrpc_broadcastmsgto_tablesvrd("delete", table_data.svr_id , table_data.id)
 	
 	--检查桌子当前是否能够删除
@@ -112,7 +119,8 @@ function TableCMD.delete(...)
 	--msgproxyrpc.sendrpc_broadcastmsgto_tablesvrd("delete", table_data.svr_id , table_data.id)
 
 	--通知roomsvrd删除table
-	skynet.send(table_data.svr_id, "lua", "cmd", "delete_table", table_data.id)
+
+	skynet.send(table_data.svr_id, "lua", "cmd", "delete_table", table_data.id,table_data.create_table_id)
 		
 	--删除桌子前清除桌子的状态
 	roomtablelogic.clear(table_data)

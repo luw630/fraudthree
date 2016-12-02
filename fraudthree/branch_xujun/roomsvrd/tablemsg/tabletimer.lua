@@ -98,6 +98,7 @@ function TableTimer.onegamerealend(timerid, request)
 	local server = msghelper:get_server()
 	local table_data = server.table_data
 	if table_data.timer_id ~= timerid then
+		--print("TableTimer.onegamerealend"..table_data.timer_id.."    timerid "..timerid)
 		return
 	end
 	timer.cleartimer(table_data.timer_id)

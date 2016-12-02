@@ -2,7 +2,7 @@ local skynet = require "skynet"
 local filelog = require "filelog"
 local msghelper = require "tablestatesvrhelper"
 local base = require "base"
-
+local tabletool = require "tabletool"
 local TableStatesvrRequest = {}
 
 function TableStatesvrRequest.process(session, source, event, ...)
@@ -81,10 +81,15 @@ function TableStatesvrRequest.getgamerooms(request)
 	for roomsvr_id, roomsvr in pairs(roomsvrs) do
 		if roomsvr ~= nil and type(roomsvr) == "table" then
 			local roomlist = roomsvr[room_type]
-			if roomlist ~= nil then					
+			if roomlist ~= nil then	
+				print("roomlist "..tabletool.getn(roomlist))	
 				for game_type, gamelist in pairs(roomlist) do
+					
 					for id, _ in pairs(gamelist) do
+						print("gamelist "..id)
 						if id ~= "num" then
+							filelog.sys_info("getgamerooms",game_type)
+							print("getgamerooms  "..game_type)
 							if game_type_list[game_type] == nil then
 								tableinfo = table_pool[id]
 								table.insert(responsemsg.tablestates, tableinfo)

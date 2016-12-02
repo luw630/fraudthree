@@ -18,6 +18,7 @@ end
 
 function GatesvrCMD.start(conf)
 	local server = msghelper:get_server()
+
 	server.tcpmng.init(server, "agent", conf.agentsize, conf.agentincr, conf.svr_netpack)
 	base.skynet_retpack(true)
 	skynet.fork(function()

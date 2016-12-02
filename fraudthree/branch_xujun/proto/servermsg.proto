@@ -1,0 +1,59 @@
+// See README.txt for information and build instructions.
+// syntax = "proto2";
+
+message BackupSeatInfo {
+	optional int32 rid = 1;
+	optional int32 index = 2;
+	optional int32 state = 3;
+	optional int32 timeout_count = 4;
+	optional int32 win = 5;
+	optional int32 seecards = 6;
+	optional int32 autocall = 7;
+	optional int32 coin = 8;
+	optional string gatesvr_id = 9; 
+	optional int32 agent_address = 10;
+	optional int32 timeout_fold = 11;
+	optional int32 is_tuoguan = 12;
+	repeated CardInfo cards = 13;
+	repeated TablePlayerInfo tableplayerinfos = 14;
+}
+
+message Backuptabledata {
+	optional int32 id = 1;    //桌子ID
+	optional string name = 2;      //桌子名称 地址
+	optional int32 state = 3;
+	optional int32 action_seat_index = 4;
+	optional int32 action_to_time = 5;
+	optional int32 action_type = 6;
+	optional int32 cur_bets = 7;
+	optional int32 all_bets = 8;
+	optional int32 rush_seat_index = 9;
+	optional int32 rush_bets = 10;
+	optional int32 turns = 11;
+	optional int32 turns_startindex = 12;
+	optional int32 end_delete = 13;
+	optional int32 playernum = 14;
+	optional int32 makers = 15;
+	optional int32 timer_id = 16;
+	optional int32 delete_table_timer_id = 17;
+	optional int32 sitdown_player_num = 18;
+	repeated BackupSeatInfo seats = 19;
+}
+
+message  Qbackupdata
+{
+  optional string roomsvr_id = 1;      //房间服务器id
+  optional Backuptabledata backtabledata = 2;
+}
+
+
+message QrequestRecovery {
+  optional string roomsvr_id = 1;      //房间服务器id
+  optional int32 id = 2;    //桌子ID	
+}
+
+message ArequestRecovery {
+  optional string roomsvr_id = 1;      //房间服务器id
+  optional Backuptabledata backtabledata = 2;
+}
+

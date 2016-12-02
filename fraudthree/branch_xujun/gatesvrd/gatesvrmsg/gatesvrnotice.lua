@@ -25,6 +25,7 @@ function GatesvrNotice.get_gatesvr_state(...)
 		ip = gatesvr.svr_ip,
 		port = gatesvr.svr_port,
 		onlinenum = server.tcpmng.agentnum,
+		gamegates = gatesvr.gamegates,
 	}
 	msgproxy.sendrpc_broadcastmsgto_loginsvrd("update_gatesvr_state", skynet.getenv("svr_id"), gatesvrstate)
 end

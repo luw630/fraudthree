@@ -43,6 +43,12 @@ function AgentCMD.disconnect(isheart, fd)
    		return
    	end
 
+   	if msghelper:get_enterging_state() then
+   		filelog.sys_obj("entering", "disconnect", server.rid)
+   		return
+   	end
+
+
 	--如果玩家已经因为心跳超时掉线，则玩家退出
 	if server.isoffline then
 		server:agentexit()

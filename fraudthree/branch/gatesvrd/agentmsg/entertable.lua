@@ -70,8 +70,8 @@ function  EnterTable.process(session, source, fd, request)
 
 	msghelper:set_enterging_state(true)
 	processing:set_process_state(true)
-	--responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, "friend"..request.id, "entertable", request)
-	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "entertable", request)
+	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, "gameroom"..request.id, "entertable", request)
+	--responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "entertable", request)
 	processing:set_process_state(false)
 	msghelper:set_enterging_state(false)
 

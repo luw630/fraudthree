@@ -84,7 +84,8 @@ function  RequestSitdown.process(session, source, fd, request)
 	}	
 
 	processing:set_process_state(true)
-	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, server.roomsvr_id, server.roomsvr_table_address, "requestsitdown", request)
+	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, server.roomsvr_id, "gameroom"..request.id, "requestsitdown", request)
+	--responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, server.roomsvr_id, server.roomsvr_table_address, "requestsitdown", request)
 	processing:set_process_state(false)
 
 	if not msghelper:is_login_success() then

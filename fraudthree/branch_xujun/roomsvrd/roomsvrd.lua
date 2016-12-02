@@ -20,6 +20,8 @@ local Roomsvrd = serverbase:new({
 	create_table_ids = {},
 
 	friend_table_id = 0,
+	redisdb_service = nil,
+--	friend_table_conf = {},
 })
 
 function Roomsvrd:tostring()

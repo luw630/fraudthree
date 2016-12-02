@@ -99,6 +99,7 @@ function Agent:create_session(conf)
 	self.watch_dog = conf.watchdog	
 	self.last_heart_time= timetool.get_time()
 	self.ip, self.port = string.match(conf.ip, "(.+):(%d+)")
+	self.isoffline = false
 	skynet.fork(function()
 		while true do
 			skynet.sleep(500)

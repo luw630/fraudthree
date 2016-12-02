@@ -49,10 +49,11 @@ function TableTimer.doaction(timerid, request)
 		return
 	end
 	
-	if table_data.timer_id >= 0 then
-		timer.cleartimer(table_data.timer_id)
-		table_data.timer_id = -1	
-	end
+	if table_data.timer_id ~= timerid then
+		return
+	end 
+
+	 table_data.timer_id = -1
 
 	table_data.action_type = EActionType.ACTION_TYPE_FOLD 
 	table_data.state = ETableState.TABLE_STATE_CONTINUE
@@ -76,7 +77,6 @@ function TableTimer.restart_game(timerid, request)
  	local table_data = server.table_data
  	local request = { type = EGameStartType.GAME_START_BYSERVER}
 	if table_data.timer_id == timerid then
-	    timer.cleartimer(table_data.timer_id)
 	    table_data.timer_id = -1
 	    local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 	    roomtablelogic.startgame(table_data,request)
@@ -101,7 +101,7 @@ function TableTimer.onegamerealend(timerid, request)
 		--print("TableTimer.onegamerealend"..table_data.timer_id.."    timerid "..timerid)
 		return
 	end
-	timer.cleartimer(table_data.timer_id)
+
 	table_data.timer_id = -1
 	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
 	table_data.state = ETableState.TABLE_STATE_ONE_GAME_REAL_END

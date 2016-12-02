@@ -16,5 +16,8 @@ function TableNotice.get_roomsvr_state( ... )
 	msghelper:report_table_state()
 end
 
+function TableNotice.recoverydata( table_data )
+	msghelper:recoverydata(table_data)
+end
 
 return TableNotice

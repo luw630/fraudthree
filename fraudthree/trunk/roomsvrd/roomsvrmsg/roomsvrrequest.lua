@@ -77,8 +77,6 @@ function RoomsvrRequest.createfriendtable(session, source, request)
 	    create_time = timetool.get_time(),
 	   	action_timeout = request.action_timeout,       --玩家操作限时
 		action_timeout_count = request.action_timeout_count, --玩家可操作超时次数
-		coin_realize = {}, --钱袋子
-		start_game_player_info = {}, --刚开始新的一局的参赛的rid记录
 		--各个游戏相关
 		base_coin = request.base_coin,
 		force_overturns = request.force_overturns,

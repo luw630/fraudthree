@@ -16,6 +16,14 @@ function AgentNotice.process(session, source, event, ...)
 	f(...)
 end
 
+
+-- local leavetablemsg = {
+-- 		roomsvr_id = tableobj.svr_id,
+-- 		roomsvr_table_id = tableobj.id,
+-- 		roomsvr_table_address = skynet.self(),
+-- 		is_sendto_client = is_sendto_client,
+-- 		rid = rid,
+-- 	}
 function AgentNotice.leavetable(noticemsg)
 	if not msghelper:is_login_success() then
 		return
@@ -53,7 +61,9 @@ function AgentNotice.leavetable(noticemsg)
 end
 
 function AgentNotice.standuptable(noticemsg)
+	--filelog.sys_error("server room index:"..server.roomsvr_seat_index.."noticemsg room index"..noticemsg.roomsvr_seat_index)
 	local server = msghelper:get_server()
+	filelog.sys_error("在standup通知里面：server room index:"..server.roomsvr_seat_index.."noticemsg room index"..noticemsg.roomsvr_seat_index)
 	if server.rid ~= noticemsg.rid then
 		return
 	end
@@ -69,6 +79,7 @@ function AgentNotice.standuptable(noticemsg)
 	if server.roomsvr_seat_index ~= noticemsg.roomsvr_seat_index then
 		return
 	end
+	filelog.sys_error("已经通知agentnotice将玩家站起")
 	server.roomsvr_seat_index = 0
 end
 
@@ -78,35 +89,11 @@ end
 
 function AgentNotice.gameresult(noticemsg)
 	local server = msghelper:get_server()
-	local playgame = server.playgame
-	local money = server.money
-
-	
-
 	if server.rid ~= noticemsg.rid then
-	     filelog.sys_error("gameresult save_player_money faile",server.rid,noticemsg.rid)
 		return
 	end
-
-	if noticemsg.isendgame > 0 then
-		playgame.winnum = playgame.winnum + 1
-		playgame.laststatus = playgame.laststatus + 1
-	else
-		playgame.losenum = playgame.losenum + 1
-		playgame.laststatus = 0
-	end
-
-	if playgame.laststatus > playgame.continuewinnum then
-		playgame.continuewinnum  = playgame.laststatus
-	end
-	
-	--print("AgentNotice.gameresult rid "..server.rid.."  money  "..noticemsg.win_money)
-	server.money.coin = noticemsg.win_money
-	if  server.money.coin > server.money.maxcoin then
-		server.money.maxcoin = server.money.coin
-	end
-	playerdatadao.save_player_money("update",server.rid,server.money)
-	playerdatadao.save_player_playgame("update",server.rid,server.playgame)
+	msghelper:save_player_coin(noticemsg.rid,noticemsg.win_money)
+	msghelper:save_player_gameInfo(noticemsg.rid,noticemsg)
 end
 
 function AgentNotice.updateplayerinfo(rid,update_key_value,reason,is_sendto_client)

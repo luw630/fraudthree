@@ -72,7 +72,9 @@ function  ReenterTable.process(session, source, fd, request)
 		rolename = server.info.rolename,
 		logo = server.info.logo,
 		sex = server.info.sex,
-	}	
+	}
+	request.coin = server.money.coin
+		
 	processing:set_process_state(true)
 	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "reentertable", request)
 	processing:set_process_state(false)

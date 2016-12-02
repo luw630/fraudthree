@@ -39,8 +39,8 @@ function  LoginsvrLogin.process(session, source, fd, request)
 	end
 
 	--校验第三方登录是否成功
-	local token = string.sub(request.thirdtoken, -6, -1)
-	local data = string.sub(request.thirdtoken, 1, 6)
+	local token = string.sub(request.thirdtoken, -6, -1) --截取从倒数第6位到倒数第一位
+	local data = string.sub(request.thirdtoken, 1, 6) --截取正数第1位到正数第6位
 	local auth_token = auth.generate_thirdauth_md5token(data)
 	if token ~= auth_token then
 		responsemsg.errcode = EErrCode.ERR_VERIFYTOKEN_FAILED

@@ -4,6 +4,7 @@ local msghelper = require "roomsvrhelper"
 local serverbase = require "serverbase"
 local base = require "base"
 local table = table
+require "skynet.manager"
 
 local params = ...
 
@@ -21,6 +22,7 @@ local Roomsvrd = serverbase:new({
 
 	friend_table_id = 0,
 	redisdb_service = nil,
+	friend_table_conf = {},
 })
 
 function Roomsvrd:tostring()
@@ -43,7 +45,7 @@ end
 
 skynet.start(function()  
 	if params == nil then
-		Roomsvrd:start()
+		Roomsvrd:start(svr_netpack = "websocketnetpack")
 	else		
 		Roomsvrd:start(table.unpack(base.strsplit(params, ",")))
 	end	

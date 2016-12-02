@@ -60,7 +60,7 @@ function  GetTableStateByCreateId.process(session, source, fd, request)
 			errcodedes = "无效的请求!"
 		}
 	end	
-	filelog.sys_info("GetTableStateByCreateIdRes",responsemsg.tablestate)
+	--filelog.sys_info("GetTableStateByCreateIdRes",responsemsg.tablestate)
 	--print("getfriendtablelist "..responsemsg.tablestate.id.."   "..responsemsg.tablestate.roomsvr_id.."   "..
 		--responsemsg.tablestate.roomsvr_table_address)
 	msghelper:send_resmsgto_client(fd, "GetTableStateByCreateIdRes", responsemsg)

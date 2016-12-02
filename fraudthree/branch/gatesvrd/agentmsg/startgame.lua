@@ -67,7 +67,8 @@ function  StartGame.process(session, source, fd, request)
 	request.rid = server.rid
 	request.type = EGameStartType.GAME_START_BYPLAYER
 	processing:set_process_state(true)
-	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "startgame", request)
+	responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, "gameroom"..request.id, "startgame", request)
+	--responsemsg, seatinfo = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "startgame", request)
 	processing:set_process_state(false)
 
 	if not msghelper:is_login_success() then

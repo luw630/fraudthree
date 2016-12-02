@@ -109,6 +109,12 @@ EActionType = {
 	ACTION_TYPE_SHOWCARD = 13,--SHOW牌
 }
 
+ERUSHTYPE = 
+{
+	RUSH_STRAT = 1,  --血拼开始
+	RUSH_END = 2 , -- 血拼结束
+}
+
 --房间类型
 ERoomType = {
 	ROOM_TYPE_UNKNOW = 0,
@@ -188,4 +194,5 @@ EReasonChangeCurrency = {
 	CHANGE_CURRENCY_FRIEND_TABLE =2, --朋友桌结算
 	CHANGE_CURRENCY_RECHARGE = 3, --商城充值
 	CHANGE_CURRENCY_GETITEM_FROM_MAIL = 4, ---领取邮件附件
+	CHANGE_CURRENCY_GATESERVERRESTART = 5, ---gateserver 重启以后没有保存数据
 }

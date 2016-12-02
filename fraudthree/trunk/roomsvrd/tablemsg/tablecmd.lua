@@ -63,10 +63,19 @@ end
 function TableCMD.reload(conf)
 	local server = msghelper:get_server()
 	local table_data = server.table_data
+	if table_data == nil then
+		filelog.sys_error("the table data is nil")
+	end
+
 	if conf.version <= table_data.conf.version then
+		filelog.sys_error("conf version error")
 		return
 	end 
 	--TO ADD 添加reload操作
+	table_data.is_reload = true
+	table_data.reload_conf = conf
+	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
+	roomtablelogic.reload(table_data,conf)
 end
 
 

@@ -154,7 +154,7 @@ function RoomGameLogic.continue(gameobj)
 		RoomGameLogic.onstanduptable(gameobj,seat)
 		 
 	elseif tableobj.action_type == EActionType.ACTION_TYPE_CALL or tableobj.action_type == 
-	EActionType.ACTION_TYPE_RAISE  then --跟注
+	EActionType.ACTION_TYPE_RAISE  then -------------跟注
 		local bets = 0
 		if tableobj.action_type == EActionType.ACTION_TYPE_CALL  then
 			bets = tableobj.cur_bets
@@ -174,7 +174,7 @@ function RoomGameLogic.continue(gameobj)
 		
 		--roomtablelogic.changeMoney(seat,-bets,EReasonChangeCurrency.CHANGE_CURRENCY_SYSTEM_GAME) --扣钱     
 		roomtablelogic.changeMoney(tableobj,seat,-bets,EReasonChangeCurrency.CHANGE_CURRENCY_SYSTEM_GAME) --扣钱     
-		tableobj.all_bets = tableobj.all_bets + bets   --总投注增加
+		tableobj.all_bets = tableobj.all_bets + bets  -------------总投注增加
 
 		noticemsg.cur_bets = tableobj.cur_bets
 		noticemsg.all_bets = tableobj.all_bets
@@ -211,9 +211,7 @@ function RoomGameLogic.continue(gameobj)
 		end
 		
 		--noticemsg.action_param = seat.index
-		--RoomGameLogic.paymoney(gameobj,compareseat) 
-		noticemsg.cur_bets = tableobj.cur_bets
-		noticemsg.all_bets = tableobj.all_bets 
+		--RoomGameLogic.paymoney(gameobj,compareseat)  
 	elseif tableobj.action_type == EActionType.ACTION_TYPE_RUSH then --血拼
 		--rush_seat_index
 		local bets = 0
@@ -241,6 +239,7 @@ function RoomGameLogic.continue(gameobj)
 		noticemsg.all_bets = tableobj.all_bets
 		seat.state = ESeatState.SEAT_STATE_RUSH  
 
+		noticemsg.action_param = ERUSHTYPE.RUSH_STRAT
 	elseif tableobj.action_type >= EActionType.ACTION_TYPE_SEECARDS and  tableobj.action_type <= 
 		EActionType.ACTION_TYPE_FOLD then
 		local request = {
@@ -291,8 +290,8 @@ function RoomGameLogic.continue(gameobj)
 		local noticemsg = {
 			rid = tableobj.seats[tableobj.action_seat_index].rid,
 			roomsvr_seat_index = tableobj.action_seat_index,
-			action_type = tableobj.action_type,
-			action_param = tableobj.action_param,
+			action_type = EActionType.ACTION_TYPE_RUSH,
+			action_param = ERUSHTYPE.RUSH_END,
 			cur_bets = tableobj.cur_bets,
 			all_bets = tableobj.all_bets,
 		}
@@ -556,7 +555,7 @@ function RoomGameLogic.is_playeing(gameobj, seat ) --正在游戏的牌局中，
 	return (seat.state >= ESeatState.SEAT_STATE_PLAYING) and (seat.state < ESeatState.SEAT_STATE_FOLD)
 end
 
-function RoomGameLogic.paymoney( gameobj, seat,is_endgame )
+function RoomGameLogic.paymoney( gameobj, seat,is_endgame )  --输家给钱
 	local tableobj = gameobj.tableobj
 	local noticemsg = 
 	{
@@ -585,9 +584,12 @@ function RoomGameLogic.paymoney( gameobj, seat,is_endgame )
 
 
 	seat.state = ESeatState.SEAT_STATE_WAIT_START
-	
-	--msghelper:sendmsg_to_tableplayer(seat, "gameresult", noticemsg)
-	msghelper:sendmsg_to_tableplayer(seat, "gameresult", noticemsg)	
+	if  (seat.coin- seat.getcoin) < -seat.getcoin then
+		filelog.sys_error("RoomGameLogic.paymoney error",seat.rid,tableobj.id)
+	end
+	roomtablelogic.changePlayerMoney(tableobj,seat, (seat.coin- seat.getcoin),seat.getcoin, seat.coin,
+	EReasonChangeCurrency.CHANGE_CURRENCY_SYSTEM_GAME,noticemsg.isendgame )
+	seat.getcoin =  seat.coin
 end
 
 function RoomGameLogic.onegamestart_initseat(gameobj, seat)
@@ -598,15 +600,61 @@ function RoomGameLogic.onegamestart_initseat(gameobj, seat)
 	--seat.cards = {}
 	seat.ready_to_time = 0
 	
-	seat.getcoin = 0
+	--seat.getcoin =  seat.coin
 	seat.seecards = 0   --是否看牌
 	seat.autocall = 0   --是否自动跟注
 
 	
-	--roomtablelogic.changeMoney(seat,-gameobj.tableobj.cur_bets,EReasonChangeCurrency.CHANGE_CURRENCY_SYSTEM_GAME) -- --扣除底注   	
+	--roomtablelogic.changeMoney(seat,-gameobj.tableobj.cur_bets,EReasonChangeCurrency.CHANGE_CURRENCY_SYSTEM_GAME) -- --扣除底注
+	--通知客户端扣除底注
+	
+
 	roomtablelogic.changeMoney(gameobj.tableobj,seat,-gameobj.tableobj.cur_bets,EReasonChangeCurrency.CHANGE_CURRENCY_SYSTEM_GAME) -- --扣除底注   	
 	assert(seat.coin>=0,"onegamestart_initseat coin faile")
 	gameobj.tableobj.all_bets = gameobj.tableobj.all_bets + gameobj.tableobj.cur_bets
+end
+
+function RoomGameLogic.copy_gameseat( seat,copyseat )
+	copyseat.index = seat.index
+	copyseat.state = seat.state
+	copyseat.timeout_count = seat.timeout_count
+	copyseat.win = seat.win
+	copyseat.seecards = seat.seecards
+	copyseat.autocall = seat.autocall
+	copyseat.cards = seat.cards
+	copyseat.coin = seat.coin
+	copyseat.rid = seat.rid
+	copyseat.gatesvr_id=seat.gatesvr_id
+	copyseat.agent_address = seat.agent_address
+	copyseat.timeout_fold = seat.timeout_fold
+	copyseat.is_tuoguan = seat.is_tuoguan 
+	copyseat.playerinfo = {}
+	copyseat.playerinfo.rolename=seat.playerinfo.rolename
+	copyseat.playerinfo.logo=seat.playerinfo.logo
+	copyseat.playerinfo.sex=seat.playerinfo.sex
+end
+
+function RoomGameLogic.recovery_gameseat( seat,copyseat )
+	seat.state = copyseat.state
+	seat.timeout_count = copyseat.timeout_count
+	seat.win = copyseat.win
+	
+	--seat.cards = {}
+	
+	
+	seat.coin = copyseat.coin
+	seat.seecards = copyseat.seecards
+	seat.autocall = copyseat.autocall
+	seat.cards = copyseat.cards
+	seat.rid = copyseat.rid
+	seat.gatesvr_id=copyseat.gatesvr_id
+	seat.agent_address = copyseat.agent_address
+	seat.timeout_fold = copyseat.timeout_fold
+	seat.is_tuoguan = copyseat.is_tuoguan 
+
+	seat.playerinfo.rolename=copyseat.playerinfo.rolename
+	seat.playerinfo.logo=copyseat.playerinfo.logo
+	seat.playerinfo.sex=copyseat.playerinfo.sex
 end
 
 function RoomGameLogic.onegamestart_inittable(gameobj)
@@ -630,6 +678,84 @@ function RoomGameLogic.onegamestart_inittable(gameobj)
 	end	
 end
 
+function RoomGameLogic.recovery_gametable( gameobj,gametable )
+	local tableobj = gameobj.tableobj
+	tableobj.id = gametable.id
+	tableobj.state = gametable.state
+	tableobj.action_seat_index = gametable.action_seat_index
+	tableobj.action_to_time = gametable.action_to_time
+	tableobj.action_type = gametable.action_type
+	
+	
+	tableobj.cur_bets = gametable.cur_bets
+	tableobj.all_bets = gametable.all_bets
+	tableobj.rush_seat_index = gametable.rush_seat_index
+	tableobj.rush_bets = gametable.rush_bets
+	tableobj.turns =gametable.turns
+	tableobj.turns_startindex = gametable.turns_startindex
+	tableobj.end_delete = gametable.end_delete
+	tableobj.playernum = gametable.playernum
+	tableobj.makers = gametable.makers
+	tableobj.delete_table_timer_id = gametable.delete_table_timer_id 
+	tableobj.timer_id = gametable.timer_id
+	tableobj.sitdown_player_num = gametable.sitdown_player_num
+
+       	local seatinfo
+	for index, seat in pairs(gametable.seats) do
+	      RoomGameLogic.recovery_gameseat(tableobj.seats[index],seat)
+	end
+
+	local doactionntcmsg = {
+		rid = tableobj.seats[tableobj.action_seat_index].rid,
+		roomsvr_seat_index = tableobj.action_seat_index,
+		action_to_time = tableobj.action_to_time,
+		game_turns = tableobj.turns,
+	}
+	
+	if tableobj.timer_id >= 0 then
+		timer.cleartimer(tableobj.timer_id)
+		tableobj.timer_id = -1
+		tableobj.timer_id = timer.settimer(tableobj.conf.action_timeout*100, "doaction", doactionntcmsg)
+	end
+end
+
+
+function RoomGameLogic.copy_gametable( gameobj,gametable )
+	local tableobj = gameobj.tableobj
+	gametable.id = tableobj.id
+	gametable.name = tableobj.name
+	gametable.state = tableobj.state
+	gametable.action_seat_index = tableobj.action_seat_index
+	gametable.action_to_time = tableobj.action_to_time
+	gametable.action_type = tableobj.action_type
+	gametable.cur_bets = tableobj.cur_bets
+	gametable.all_bets = tableobj.all_bets
+	gametable.rush_seat_index = tableobj.rush_seat_index
+	gametable.rush_bets = tableobj.rush_bets
+	gametable.turns =tableobj.turns
+	gametable.turns_startindex = tableobj.turns_startindex
+	gametable.end_delete = tableobj.end_delete
+	gametable.playernum = tableobj.playernum
+	gametable.makers = tableobj.makers
+	gametable.timer_id = tableobj.timer_id
+	gametable.delete_table_timer_id = tableobj.delete_table_timer_id
+	gametable.sitdown_player_num = tableobj.sitdown_player_num
+             gametable.room_type = tableobj.conf.room_type
+              gametable.game_type = tableobj.conf.game_type
+	
+
+	gametable.seats = {}
+       	local seatinfo
+	for index, seat in pairs(tableobj.seats) do
+	            seatinfo = {}
+	            if seat.state > ESeatState.SEAT_STATE_NO_PLAYER then
+	            	            	RoomGameLogic.copy_gameseat(seat,seatinfo)
+	            	            	gametable.seats[index] = seatinfo
+	            	end
+	end
+end
+
+
 function RoomGameLogic.standup_clear_seat(gameobj, seat)
 	seat.rid = 0
 	seat.state = ESeatState.SEAT_STATE_NO_PLAYER
@@ -643,10 +769,11 @@ function RoomGameLogic.standup_clear_seat(gameobj, seat)
 	seat.timeout_count = 0
 	seat.win = EComPareResult.WIN_RESULT_UNKNOW
 	seat.cards = {}
-	seat.coin = 0--玩家携带进桌的金币
+	--seat.coin = 0--玩家携带进桌的金币
 	seat.is_ready = EBOOL.FALSE
 	seat.seecards = 0
 	seat.autocall = 0   
 end
+
 
 return RoomGameLogic

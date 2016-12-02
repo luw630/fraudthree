@@ -134,44 +134,7 @@ function TableStatesvrNotice.newupdate(roomsvr_id, tableinfo)
 	table_pool[tableinfo.id] = tableinfo	
 end
 
-function TableStatesvrNotice.backup( roomsvr_id, tabledata )
-	if roomsvr_id == nil or tabledata == nil then
-		return
-	end
-	--local tabledata = json.decode(back_tabledata.backuptable_data)
-	local server = msghelper:get_server()	
-	local roomsvrsdata = server.roomsvrsdata
 
-	if roomsvrsdata[roomsvr_id] == nil then
-		roomsvrsdata[roomsvr_id]  = {}
-	end
-	
-	roomsvrsdata[roomsvr_id][tabledata.id] = tabledata
-end
-
-function TableStatesvrNotice.requestrecovery( roomsvr_id, table_id )
-	if roomsvr_id == nil or table_id == nil then
-		return
-	end
-	local server = msghelper:get_server()	
-	local roomsvrsdata = server.roomsvrsdata
-	local tabledata
-	if roomsvrsdata[roomsvr_id] == nil then
-		return
-	end
-
-	if roomsvrsdata[roomsvr_id][table_id] == nil then
-		return
-	end 
-	filelog.sys_info("start requestrecovery")
-	tabledata = roomsvrsdata[roomsvr_id][table_id]
-
-	   -- local backup_tabledata = 
-	   --  {
-	   --      backuptable_data = json.encode(tabledata),
-	   --  }
-	msgproxy.sendrpc_noticemsgto_roomsvrd(roomsvr_id, tabledata.name, "recoverydata",tabledata)
-end
 
 function TableStatesvrNotice.update(roomsvr_id, tableinfo)
 	if roomsvr_id == nil or tableinfo == nil then

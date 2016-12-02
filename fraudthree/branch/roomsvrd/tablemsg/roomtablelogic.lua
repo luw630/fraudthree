@@ -69,7 +69,8 @@ function RoomTableLogic.init(tableobj, conf, roomsvr_id)
 	tableobj.the_round = 1;    --当前游戏轮数
 	tableobj.makers = 0   --庄家
 	tableobj.playernum = 0 --玩家数量
-	
+	tableobj.coin_realize = {}--钱袋子
+	tableobj.start_game_player_info = {}--刚开始新的一局的参赛的rid记录
 
 	local roomgamelogic = msghelper:get_game_logic()	
 	local game = require("object.gameobj")
@@ -86,28 +87,26 @@ function RoomTableLogic.init(tableobj, conf, roomsvr_id)
 	-- if conf.force_overturns == nil then
 	-- 	tableobj.conf.force_overturns  = 5	
 	-- end
-
+	tableobj.name = "gameroom"..tableobj.id
+        	skynet.name( tableobj.name , skynet.self())     --注册别名
 	return true
 end
 
 
 function RoomTableLogic.clear(tableobj)
 	if tableobj.timer_id > 0 then
+		filelog.sys_info("RoomTableLogic.clear cleartimer",tableobj.timer_id)
 		timer.cleartimer(tableobj.timer_id)
 		tableobj.timer_id = -1
 	end
 
 	if tableobj.delete_table_timer_id > 0 then
+		filelog.sys_info("RoomTableLogic.clear delete_table_timer_id",tableobj.delete_table_timer_id)
 		timer.cleartimer(tableobj.delete_table_timer_id)
 		tableobj.delete_table_timer_id = -1
 	end
 
-	for _, seat in pairs(tableobj.seats) do
-		if seat.ready_timer_id > 0 then
-			timer.cleartimer(seat.ready_timer_id)
-			seat.ready_timer_id = -1
-		end
-	end
+
 
 	for k,v in pairs(tableobj) do
 		tableobj[k] = nil
@@ -199,10 +198,9 @@ function RoomTableLogic.sitdowntable(tableobj, request, seat)
 	seat.playerinfo.sex=request.playerinfo.sex
 	seat.state = ESeatState.SEAT_STATE_WAIT_START
 	seat.coin = request.coin
+	seat.getcoin = seat.coin
+
 	
-
-	seat.ready_to_time = timetool.get_time() + tableobj.conf.ready_timeout
-
 	local noticemsg = {
 		rid = seat.rid,
 		seatinfo = {},
@@ -283,6 +281,7 @@ function RoomTableLogic.passive_standuptable(tableobj, seat, reason)
 		waitinfo.playerinfo.rolename=seat.playerinfo.rolename
 		waitinfo.playerinfo.logo=seat.playerinfo.rolename
 		waitinfo.playerinfo.sex=seat.playerinfo.sex
+		waitinfo.coin = seat.coin
 	end
 
 	--初始化座位数据
@@ -347,6 +346,7 @@ function RoomTableLogic.startgame(tableobj, request)
 		
 		if request.type == EGameStartType.GAME_START_BYSERVER then  
 			if tableobj.timer_id >= 0 then
+				filelog.sys_info("RoomTableLogic.startgame cleartimer",tableobj.timer_id)
 				timer.cleartimer(tableobj.timer_id)
 			end
 			tableobj.timer_id = timer.settimer(10*100, "restart_game")
@@ -528,10 +528,20 @@ function RoomTableLogic.randCardListForSeat(tableobj)
 	
 end
 
+function RoomTableLogic.changeMoney(tableobj, seat,changevalue )
+	if tableobj.conf.room_type == 2 then 
+		if 	tableobj.coin_realize[seat.rid]  == nil then
+			filelog.sys_error("tableobj.coin_realize nil",type(seat.rid))
+			for k,v in pairs(tableobj.coin_realize) do
+				filelog.sys_error("tableobj.coin_realize type",type(k))
+			end
+		end
 
-function RoomTableLogic.changeMoney(tableobj, seat,changevalue,reason )
-	if tableobj.conf.room_type == 2 then 									---如果是朋友桌则执行
-		tableobj.conf.coin_realize[seat.rid] =  tableobj.conf.coin_realize[seat.rid] + changevalue
+		if seat.rid == nil then
+			filelog.sys_error("RoomTableLogic.changeMoney seat.rid nil ")
+		end		
+						
+		tableobj.coin_realize[seat.rid] =  tableobj.coin_realize[seat.rid] + changevalue
 	end
 	local beforecoin = seat.coin
 	if seat.coin + changevalue >= 0 then
@@ -540,7 +550,23 @@ function RoomTableLogic.changeMoney(tableobj, seat,changevalue,reason )
 		seat.coin = 0
 		filelog.sys_error("RoomTableLogic.changeMoney Error",seat.rid,changevalue)
 	end
-	gamelog.write_player_coinlog(seat.rid, reason, ECurrencyType.CURRENCY_TYPE_COIN, changevalue, beforecoin, seat.coin)
+
+end
+
+----金币日志 key = tableid+roomsvrd_id+time+skynet.self()
+function RoomTableLogic.changePlayerMoney( tableobj, seat,changevalue,beforetotal, aftertotal,reason,isendgame ,iswaitplayer)
+	local key = tableobj.id..tableobj.svr_id..timetool.get_time()..skynet.self()
+
+	gamelog.write_player_coinlog(seat.rid, reason, ECurrencyType.CURRENCY_TYPE_COIN, changevalue, beforetotal, aftertotal,key)
+	local noticemsg = 
+	{
+		rid = seat.rid,
+		win_money =  changevalue,
+		isendgame = isendgame,
+	}
+	msghelper:sendmsg_to_tableplayer(seat, "gameresult", noticemsg)
+
+	
 end
 
 --为每个玩家发牌
@@ -554,5 +580,6 @@ function RoomTableLogic.dealCardsForPlayer(tableobj)
 		roomseatlogic.DealCards(seat);
 	end
 end
+
 
 return RoomTableLogic

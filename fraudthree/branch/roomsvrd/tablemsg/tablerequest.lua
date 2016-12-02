@@ -129,16 +129,16 @@ function TableRequest.reentertable(request)
 		seat.playerinfo.rolename=request.playerinfo.rolename
 		seat.playerinfo.logo=request.playerinfo.logo
 		seat.playerinfo.sex=request.playerinfo.sex
-
-		filelog.sys_info("reentertable seat",seat)
+		if request.coin ~= seat.getcoin then
+			roomtablelogic.changePlayerMoney(table_data,seat, (seat.getcoin- request.coin),request.coin, seat.getcoin,
+	 EReasonChangeCurrency.CHANGE_CURRENCY_GATESERVERRESTART,0 )
+		end
 	elseif waitinfo ~= nil then
 		waitinfo.gatesvr_id=request.gatesvr_id
 		waitinfo.agent_address = request.agent_address
 		waitinfo.playerinfo.rolename=request.playerinfo.rolename
 		waitinfo.playerinfo.logo=request.playerinfo.logo
 		waitinfo.playerinfo.sex=request.playerinfo.sex	
-
-		filelog.sys_info("reentertable waitinfo",waitinfo)	
 	end
 
 	if waitinfo == nil and seat == nil then
@@ -263,6 +263,7 @@ function TableRequest.sitdowntable(request)
 		end
 		seatinfo = {
 			index = seat.index,
+			room_type = table_data.conf.room_type,
 		}
 
 		--增加桌子人数计数 
@@ -417,7 +418,7 @@ function TableRequest.doaction(request)
 			return
 		end
 		responsemsg.errcode = EErrCode.ERR_INVALID_REQUEST
-		responsemsg.errcodedes = "无效请求！"
+		responsemsg.errcodedes = "无效玩家操作请求"
 		base.skynet_retpack(responsemsg)
 		return		
 	end
@@ -568,6 +569,7 @@ function TableRequest.requestsitdown( request )
 			roomsvr_table_address = request.roomsvr_table_address,
 			quest_rolename = request.sitdown_rolename,
 			quest_rid = request.rid,
+			create_table_id = table_data.conf.create_table_id,
 		}
 		 msgproxy.sendrpc_noticemsgto_gatesvrd(online.gatesvr_id,online.gatesvr_service_address, "RequestSitTableNtc", requestsittable)	
 	else

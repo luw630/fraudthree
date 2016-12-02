@@ -16,8 +16,8 @@ function RoomsvrCMD.process(session, source, event, ...)
 	f(...)	 
 end
 
-function RoomsvrCMD.delete_table(id)
-	msghelper:delete_table(id)
+function RoomsvrCMD.delete_table(id,create_table_id)
+	msghelper:delete_table(id,create_table_id)
 end
 
 function RoomsvrCMD.start(conf)
@@ -27,12 +27,15 @@ function RoomsvrCMD.start(conf)
 
 	msghelper:set_idle_table_pool(conf)
 	msghelper:initredisdb(conf)
+
 	--通知tablesvrd自己初始化
 	msgproxy.sendrpc_broadcastmsgto_tablesvrd("init", skynet.getenv("svr_id"))
 
 	--初始化桌子列表
 	msghelper:loadroomtablecfg()
 
+	--恢复朋友
+	msghelper:queryfriendtabledata()
 	base.skynet_retpack(true)
 
 	msghelper:start_time_tick()	

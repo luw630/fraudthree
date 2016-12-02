@@ -68,7 +68,8 @@ function  LeaveTable.process(session, source, fd, request)
 
 	request.rid = server.rid
 	processing:set_process_state(true)
-	responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "leavetable", request)
+	responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, "gameroom"..request.id, "leavetable", request)
+	--responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, request.roomsvr_id, request.roomsvr_table_address, "leavetable", request)
 	processing:set_process_state(false)
 
 	if not msghelper:is_login_success() then

@@ -8,11 +8,17 @@ local timetool = require "timetool"
 local helperbase = require "helperbase"
 local logicmng = require "logicmng"
 local playerdataDAO = require "playerdatadao"
+local redisdao = require "dao.redisdao"
+local json = require "cjson"
+--local protobuf = require "protobuf"
 require "enum"
+
+json.encode_sparse_array(true,1,1)
 
 local TablesvrHelper = helperbase:new({
     writelog_tables = nil,
     })
+
 
 function TablesvrHelper:sendmsg_to_alltableplayer(msgname, msg, ...)
     local table_data = self.server.table_data
@@ -32,15 +38,21 @@ function TablesvrHelper:sendmsg_to_alltableplayer(msgname, msg, ...)
     end
 end
 
-function TablesvrHelper:sendmsg_to_tableplayer(seat, msgname, ...)
-    if seat.state ~= ESeatState.SEAT_STATE_NO_PLAYER and seat.gatesvr_id ~= "" then
-        msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, msgname, ...)
+function TablesvrHelper:sendmsg_to_tableplayer(seat, msgname, msg, ...)   --noticemsg
+    filelog.sys_error("******************************")
+    --local noticemsg = ...
+    filelog.sys_error("the seat.state,the seat.gatesvr_id",seat.state,seat.gatesvr_id)
+    if (seat.state ~= ESeatState.SEAT_STATE_NO_PLAYER) and (seat.gatesvr_id ~= "") then   --状态没错，服务名称没错
+        filelog.sys_error("进入sendmsg_to_tableplayer")
+        filelog.sys_error("msg infomation:",msg)
+        msgproxy.sendrpc_noticemsgto_gatesvrd(seat.gatesvr_id,seat.agent_address, msgname, msg,...)
     end
 end
 
-function TablesvrHelper:sendmsg_to_waitplayer(wait, msgname, ...)
+function TablesvrHelper:sendmsg_to_waitplayer(wait, msgname, msg, ...)
+    filelog.sys_error("请求中途离桌，msg is：", msg)
     if wait.gatesvr_id ~= "" then
-        msgproxy.sendrpc_noticemsgto_gatesvrd(wait.gatesvr_id, wait.agent_address, msgname, ...)
+        msgproxy.sendrpc_noticemsgto_gatesvrd(wait.gatesvr_id, wait.agent_address, msgname, msg, ...)
     end
 end
 
@@ -123,6 +135,7 @@ function TablesvrHelper:copy_table_gameinfo(gameinfo)
     gameinfo.the_round = table_data.the_round
     gameinfo.game_turns = table_data.turns
     gameinfo.force_overturns = table_data.conf.force_overturns
+    gameinfo.table_makers = table_data.makers
     --TO ADD添加牌信息
 
     gameinfo.seats = {}
@@ -194,6 +207,12 @@ end
 
 function TablesvrHelper:report_table_state()
     local table_data = self.server.table_data
+
+    --skynet.name( table_data.conf.name..table_data.id, skynet.self())
+  --if table_data.conf.room_type == ERoomType.ROOM_TYPE_COMMON then
+    table_data.name = "gameroom"..table_data.id
+    skynet.name( table_data.name , skynet.self())
+--end
     --上报table
     local table_state = {
         id = table_data.id,
@@ -222,6 +241,161 @@ function TablesvrHelper:report_table_state()
     msgproxy.sendrpc_broadcastmsgto_tablesvrd("update", table_data.svr_id, table_state)
 end
 
+function TablesvrHelper:backup_data(  )
+    local table_data = self.server.table_data
+    local gamelogic = self:get_game_logic()
+    local backup_tabledata ={}
+
+    if table_data.conf.room_type == ERoomType.ROOM_TYPE_FRIEND_COMMON then
+            local table_state = {
+                cur_player_num = table_data.sitdown_player_num,
+                retain_to_time = table_data.retain_to_time,
+                table_name = table_data.conf.name,
+                create_user_rid = table_data.conf.create_user_rid,
+                create_user_rolename = table_data.conf.create_user_rolename,
+                create_user_logo = table_data.conf.create_user_logo,
+                create_time = table_data.conf.create_time,
+                create_table_id = table_data.conf.create_table_id,
+                action_timeout = table_data.conf.action_timeout,
+                action_timeout_count = table_data.conf.action_timeout_count,           
+                room_type = table_data.conf.room_type,
+                game_type = table_data.conf.game_type,
+                max_player_num = table_data.conf.max_player_num,
+                min_carry_coin = table_data.conf.min_carry_coin,
+                base_coin = table_data.conf.base_coin,
+                force_overturns =  table_data.conf.force_overturns,
+                accesscontrol =  table_data.conf.accesscontrol,
+                roomsvr_id = table_data.svr_id,
+            }
+            backup_tabledata = table_state
+    end
+    gamelogic.copy_gametable(table_data.gamelogic,backup_tabledata)
+    self:savetabledata(backup_tabledata)
+    filelog.sys_info("backup_data skynet.name",table_data.name)
+    --msgproxy.sendrpc_broadcastmsgto_tablesvrd("backup", table_data.svr_id, backup_tabledata)
+    --filelog.sys_info("backup_data",backup_tabledata)
+end
+
+function TablesvrHelper:quest_recovery(  )
+    local table_data = self.server.table_data
+     if table_data.conf.room_type == ERoomType.ROOM_TYPE_COMMON then
+         self:querytabledata(table_data.id)
+    else
+        self:querytabledata(table_data.conf.create_table_id)
+    end
+   
+    --msgproxy.sendrpc_broadcastmsgto_tablesvrd("requestrecovery", table_data.svr_id, table_data.id)
+end
+
+function TablesvrHelper:recoverydata( recovery_tabledata )
+     local table_data = self.server.table_data
+     if table_data.conf.room_type ~= ERoomType.ROOM_TYPE_COMMON then
+        return
+    end
+     filelog.sys_info("TablesvrHelper recoverydata ")
+   --local tabledata = json.decode(recovery_tabledata.backuptable_data)
+    local gamelogic = self:get_game_logic()
+
+    if table_data.conf.room_type == ERoomType.ROOM_TYPE_FRIEND_COMMON then  --恢复玩家配置数据
+                table_data.conf.id = recovery_tabledata.id
+                table_data.conf.name = recovery_tabledata.table_name
+                table_data.conf.create_user_rid = recovery_tabledata.create_user_rid
+               table_data.conf.create_user_rolename = recovery_tabledata.create_user_rolename
+                table_data.conf.create_user_logo = recovery_tabledata.create_user_logo
+               table_data.conf.create_time = recovery_tabledata.create_time
+                 table_data.conf.create_table_id =recovery_tabledata.create_table_id
+             
+                table_data.conf.game_type = recovery_tabledata.game_type
+                table_data.conf.max_player_num = recovery_tabledata.max_player_num
+                table_data.conf.min_carry_coin =recovery_tabledata.min_carry_coin
+                table_data.conf.base_coin =recovery_tabledata.min_carry_coin
+                table_data.conf.force_overturns =recovery_tabledata.force_overturns
+                table_data.conf.accesscontrol = recovery_tabledata.accesscontrol    
+               -- table_data.conf.coin_realize =   json.decode(recovery_tabledata.coin_realize)   --钱袋子
+               -- table_data.conf.start_game_player_info=   json.decode(recovery_tabledata.start_game_player_info) --刚开始新的一局的参赛的rid记录
+
+                table_data.name = "gameroom"..recovery_tabledata.id
+                skynet.name( table_data.name , skynet.self())
+                filelog.sys_info("recoverydata skynet.name",table_data.name)
+    end
+    gamelogic.recovery_gametable(table_data.gamelogic,recovery_tabledata)
+    --filelog.sys_info("recoverydata sucess")
+end
+
+function TablesvrHelper:initpbc( )
+      --  self.netpack = require("websocketnetpack")
+        -- self.pbc = require("pbc")
+        -- self.pbc.init()
+        -- self.protobuf = require("protobuf")
+end
+
+function TablesvrHelper:savetabledata( backup_tabledata )
+
+    local noticemsg = {
+        rediscmd = "hset",
+        rediskey = "tabledata",
+         rediscmdopt1 = backup_tabledata.id,
+         rediscmdopt2 = json.encode(backup_tabledata),
+    }
+    if backup_tabledata.room_type == ERoomType.ROOM_TYPE_FRIEND_COMMON then
+            noticemsg.rediskey = "friend_tabledata"
+            noticemsg.rediscmdopt1 = backup_tabledata.create_table_id
+    end
+    redisdao.save_data(".recovercache",noticemsg.rediscmd,noticemsg.rediskey,noticemsg.rediscmdopt1,noticemsg.rediscmdopt2)
+end
+
+function TablesvrHelper:querytabledata( tableid )
+    if tableid == nil then
+        filelog.sys_error("TablesvrHelper:querytabledata tableid nil")
+        return
+    end
+
+    local requestmsg = {
+        rediscmd = "hget",
+        rediskey = "tabledata",
+        rediscmdopt1 = tableid,
+        --rediscmdopt2 = "tabledata",
+    }   
+    local table_data = self.server.table_data
+    local bisfriendtable = 0
+    if table_data.conf.room_type == ERoomType.ROOM_TYPE_FRIEND_COMMON then
+        requestmsg.rediskey = "friend_tabledata"
+        bisfriendtable = 1
+    end
+
+    local issucess,data = redisdao.query_data(".recovercache", requestmsg.rediscmd,requestmsg.rediskey,requestmsg.rediscmdopt1)
+    if issucess == nil then
+        filelog.sys_error("RoomsvrHelper:querytabledata failed because cannot access datadbsvrd")
+        return nil      
+    end
+
+    if not issucess then
+        filelog.sys_error("RoomsvrHelper:querytabledata failed because datadbsvrd exception "..tableid)       
+        return nil
+    end
+
+    if (data == nil or tabletool.is_emptytable(data)) then
+        --filelog.sys_error("RoomsvrHelper:querytabledata nil")       
+        return nil
+    end
+
+    --local tablesize = data[1]
+    --filelog.sys_info("querytabledata ",tablesize)
+    
+    local tabledata = json.decode(data)
+    --local tabledata = protobuf.decode("BackupTabledata",data[2],tablesize)
+    if type(tabledata) == "table" then
+        self:recoverydata(tabledata)
+    else
+         filelog.sys_info("querytabledata error")
+    end
+    
+    return true
+end
+
+
+  
+
 function TablesvrHelper:get_game_logic()
     local table_data = self.server.table_data
     if table_data.conf.room_type == ERoomType.ROOM_TYPE_FRIEND_COMMON then
@@ -235,11 +409,11 @@ end
 ---------------------------------------xj-----------
 function TablesvrHelper:DBinsert_player_game_result(tableoj)
    
-   local record_sit_seat = tableoj.conf.start_game_player_info   --{同桌rid,同桌名字}
+   local record_sit_seat = tableoj.start_game_player_info   --{同桌rid,同桌名字}
    local creator_name = tableoj.conf.create_user_rolename        --创建者的名字
    local rid = tableoj.create_user_rid                     --创建者rid
    local creat_time = tableoj.conf.create_time            --创建时间
-   local coin_realize = tableoj.conf.coin_realize --获取烙有rid的金币包{rid=money}
+   local coin_realize = tableoj.coin_realize --获取烙有rid的金币包{rid=money}
    local room_type = tableoj.conf.room_type
    
    -- filelog.sys_info("房间名字：", creator_name )

@@ -4,8 +4,11 @@ local msghelper = require "tablestatesvrhelper"
 local timetool = require "timetool"
 local tabletool = require "tabletool"
 local base = require "base"
-
+local msgproxy = require "msgproxy"
+local json = require "cjson"
 local TableStatesvrNotice = {}
+
+json.encode_sparse_array(true,1,1)
 
 function TableStatesvrNotice.process(session, source, event, ...)
 	local f = TableStatesvrNotice[event] 

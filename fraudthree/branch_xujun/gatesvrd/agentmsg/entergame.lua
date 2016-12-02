@@ -122,8 +122,10 @@ function  EnterGame.process(session, source, fd, request)
 		return
 	end
 
-
-	filelog.sys_info("online ",server.online)
+	if status == true then
+		filelog.sys_info("EnterGame.process",status,server.playgame)
+	end
+	--filelog.sys_info("online ",server.online)
 
 	--一定放在所有异步处理的后面
 	processing:set_process_state(false)

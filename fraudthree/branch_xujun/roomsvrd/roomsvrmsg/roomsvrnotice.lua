@@ -20,4 +20,13 @@ function RoomsvrNotice.get_roomsvr_states( ... )
 	end
 end
 
+function RoomsvrNotice.recoverydata(table_data )
+	filelog.sys_info("RoomsvrNotice.recoverydata")
+	local server = msghelper:get_server()
+	local tableinfo = server.used_table_pool[table_data.id]
+	if tableinfo ~= nil then
+		skynet.send(tableinfo.table_service, "lua", "notice", "recoverydata",table_data)
+	end
+end
+
 return RoomsvrNotice

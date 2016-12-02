@@ -30,6 +30,7 @@ gatesvrs={
 		svr_netpack = "websocketnetpack",
 		svr_tcpmng = "long_tcp_mng",
 		maxclient = 100000,
+		gamegates = [[{"1":"129.168.6.222:6888", "2":"202.twotael.com:6888"}]],
 	},	
 }
 
@@ -171,6 +172,7 @@ roomsvrs={
 		tableinrc=200,
 		timersize = 1000,
 		debug_console_port = 8011,
+		svr_netpack = "websocketnetpack",
 		redisconn={
 			host="127.0.0.1",
 			port=6379,

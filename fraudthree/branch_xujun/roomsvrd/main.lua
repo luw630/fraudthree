@@ -57,6 +57,15 @@ skynet.start(function()
     local params = ",,,,,"..skynet.getenv("svr_id")   ----,,,,,roomsvr_1
     local watchdog = skynet.newservice("roomsvrd", params)
     skynet.call(watchdog, "lua", "cmd", "start", roomsvr)
+    -- skynet.call(watchdog, "lua", "cmd", "start", {
+    --     port = roomsvr.svr_port,
+    --     maxclient = roomsvr.maxclient,
+    --     nodelay = true,
+    --     agentsize = roomsvr.agentsize,
+    --     agentincr = roomsvr.agentincr,
+    --     svr_netpack = roomsvr.svr_netpack,
+    --     redisconn = roomsvr.redisconn,
+    -- })
     print("roomsvrd start success ")
     skynet.exit()   
 end)

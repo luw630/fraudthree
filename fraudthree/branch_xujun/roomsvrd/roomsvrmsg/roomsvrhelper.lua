@@ -5,6 +5,8 @@ local msgproxy = require "msgproxy"
 local servicepoolmng = require "incrservicepoolmng"
 local timetool = require "timetool"
 local configdao = require "configdao"
+local redisdao = require "dao.redisdao"
+local tabletool = require "tabletool"
 local math = math
 local string = string
 
@@ -119,6 +121,7 @@ function RoomsvrHelper:loadroomtablecfg()
 					used_table_pool[begin_id].table_service = tableservice.service
 					used_table_pool[begin_id].table_service_id = tableservice.id
 					used_table_pool[begin_id].isdelete = false
+					--self.server.friend_table_conf = table_conf_list.conf      --保存1个配置文件
 					local result = skynet.call(tableservice.service, "lua", "cmd", "start", table_conf_list.conf, skynet.getenv("svr_id"), begin_id)
 					if not result then
 						filelog.sys_error("roomsvrd create table(:"..begin_id..") failed")
@@ -128,7 +131,6 @@ function RoomsvrHelper:loadroomtablecfg()
 					filelog.sys_error("roomsvrd idle_table_mng not enough tableservice!")
 				end
 			else
-				filelog.sys_error("tongzhi zhuo zi  genxin")
 				--通知桌子更新配置
 				used_table_pool[begin_id].isdelete = false
 				skynet.send(used_table_pool[begin_id].table_service, "lua", "cmd", "reload", table_conf_list.conf)
@@ -147,5 +149,79 @@ function RoomsvrHelper:loadroomtablecfg()
 	end
 	return true
 end
+
+function RoomsvrHelper:initredisdb( conf )
+	local redisdb = skynet.newservice("redisdb", ".recovercache")
+      	skynet.call(redisdb, "lua", "init", conf.redisconn)
+        	self.server.redisdb_service = redisdb
+end
+
+function RoomsvrHelper:queryfriendtabledata( ... )
+   local requestmsg = {
+        rediscmd = "hkeys",
+        rediskey = "friend_tabledata",
+        --rediscmdopt2 = "tabledata",
+    }   
+
+    local issucess,data = redisdao.query_data(".recovercache", requestmsg.rediscmd,requestmsg.rediskey)
+    if issucess == nil then
+        filelog.sys_error("RoomsvrHelper:querytabledata failed because cannot access datadbsvrd")
+        return nil      
+    end
+
+    if not issucess then
+        filelog.sys_error("RoomsvrHelper:querytabledata failed because datadbsvrd exception "..tableid)       
+        return nil
+    end
+
+    if (data == nil or tabletool.is_emptytable(data)) then
+        filelog.sys_error("RoomsvrHelper:queryfriendtabledata nil")       
+        return nil
+    end
+
+    --local tablesize = data[1]
+    filelog.sys_info("queryfriendtabledata ",data)
+   -- self:rebuildfriendtable(data)
+    return true
+end
+
+-- function RoomsvrHelper:rebuildfriendtable( friend_table)
+-- 	local conf = self.server.friend_table_conf
+-- 	conf.room_type = ERoomType.ROOM_TYPE_FRIEND_COMMON
+-- 	for k,create_table_id in pairs(friend_table) do
+-- 		local tableservice = self.server.idle_table_mng:create_service()
+-- 		local tableinfo
+-- 		if tableservice ~= nil then
+-- 			self.server.used_table_pool[self.server.friend_table_id] = {}
+-- 			tableinfo = self.server.used_table_pool[self.server.friend_table_id]
+-- 			tableinfo.table_service = tableservice.service
+-- 			tableinfo.isdelete = false
+-- 			tableinfo.table_service_id = tableservice.id
+-- 			tableinfo.create_table_id = create_table_id
+
+-- 			conf.create_table_id = create_table_id
+-- 			conf.create_time = timetool.get_time()
+-- 			conf.id = self.server.friend_table_id
+
+-- 			filelog.sys_info("rebuildfriendtable",create_table_id)
+-- 			local result = skynet.call(tableinfo.table_service, "lua", "cmd", "start", conf, skynet.getenv("svr_id"),nil,create_table_id)
+-- 			if not result then
+-- 				filelog.sys_error("RoomsvrHelper:rebuildfriendtable(:"..create_table_id..") failed")
+-- 				pcall(skynet.kill, tableinfo.table_service)
+-- 				self.server.used_table_pool[self.server.friend_table_id] = nil
+-- 				return false, create_table_id
+
+-- 			end
+-- 			self.server.friend_table_id = self.server.friend_table_id + 1
+-- 			self.server.create_table_ids[create_table_id] = true	
+-- 		else
+-- 			filelog.sys_error("RoomsvrHelper:rebuildfriendtable roomsvr's idle_table_mng not enough tableservice!")
+-- 			return false
+-- 		end	
+-- 	end
+--     return true
+--end
+
+
 
 return	RoomsvrHelper 

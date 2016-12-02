@@ -60,16 +60,33 @@ function AgentHelper:save_player_coin(rid,number,reason)
 		money.coin = money.coin + number
 		if money.coin > money.maxcoin then money.maxcoin = money.coin end
 	else
-		money.coin = 0
+		money.coin = 0                ----------??????????
 	end
 	aftertotal = money.coin
 	playerdatadao.save_player_money("update",rid,self.server.money)
-	gamelog.write_player_coinlog(rid, reason, ECurrencyType.CURRENCY_TYPE_COIN, number, beforetotal, aftertotal)
+	--gamelog.write_player_coinlog(rid, reason, ECurrencyType.CURRENCY_TYPE_COIN, number, beforetotal, aftertotal)
 end
 ----playgame中的字段做增量更新
-function AgentHelper:save_player_gameInfo(rid,key_value_table,reason)
+function AgentHelper:save_player_gameInfo(rid,noticemsg,reason)
 	local playgame = self.server.playgame
 	---TO ADD 保存数据
+	if noticemsg.isendgame > 0 then
+		if playgame.winnum == nil then
+			filelog.sys_info("AgentNotice.gameresult",playgame)
+		end
+		playgame.winnum = playgame.winnum + 1
+		playgame.laststatus = playgame.laststatus + 1
+	else
+		if playgame.losenum == nil then
+			filelog.sys_info("AgentNotice.gameresult",playgame)
+		end
+		playgame.losenum = playgame.losenum + 1
+		playgame.laststatus = 0
+	end
+
+	if playgame.laststatus > playgame.continuewinnum then
+		playgame.continuewinnum  = playgame.laststatus
+	end
 	playerdatadao.save_player_playgame("update",rid,self.server.playgame)
 end
 

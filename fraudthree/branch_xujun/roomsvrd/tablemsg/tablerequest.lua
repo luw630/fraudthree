@@ -70,6 +70,7 @@ message EnterTableRes {
 }
 ]]
 function TableRequest.entertable(request)
+
 	local responsemsg = {
 		errcode = EErrCode.ERR_SUCCESS, 
 	}
@@ -129,16 +130,16 @@ function TableRequest.reentertable(request)
 		seat.playerinfo.rolename=request.playerinfo.rolename
 		seat.playerinfo.logo=request.playerinfo.logo
 		seat.playerinfo.sex=request.playerinfo.sex
-
-		filelog.sys_info("reentertable seat",seat)
+		if request.coin ~= seat.getcoin then
+			roomtablelogic.changePlayerMoney(table_data,seat, (seat.getcoin- request.coin),request.coin, seat.getcoin,
+	 EReasonChangeCurrency.CHANGE_CURRENCY_GATESERVERRESTART,0 )
+		end
 	elseif waitinfo ~= nil then
 		waitinfo.gatesvr_id=request.gatesvr_id
 		waitinfo.agent_address = request.agent_address
 		waitinfo.playerinfo.rolename=request.playerinfo.rolename
 		waitinfo.playerinfo.logo=request.playerinfo.logo
 		waitinfo.playerinfo.sex=request.playerinfo.sex	
-
-		filelog.sys_info("reentertable waitinfo",waitinfo)	
 	end
 
 	if waitinfo == nil and seat == nil then
@@ -263,6 +264,7 @@ function TableRequest.sitdowntable(request)
 		end
 		seatinfo = {
 			index = seat.index,
+			room_type = table_data.conf.room_type,
 		}
 
 		--增加桌子人数计数 
@@ -379,7 +381,7 @@ function TableRequest.doaction(request)
 	local roomseatlogic = logicmng.get_logicbyname("roomseatlogic")
 	local gamelogic = msghelper:get_game_logic()
 	local seat = roomtablelogic.get_seat_by_rid(table_data, request.rid)
-	filelog.sys_info("TableRequest.doaction",request)
+	--filelog.sys_info("TableRequest.doaction",request)
 	if seat == nil then
 		responsemsg.errcode = EErrCode.ERR_HAD_STANDUP
 		responsemsg.errcodedes = "玩家不在座位上！"
@@ -387,7 +389,7 @@ function TableRequest.doaction(request)
 		return
 	end
 
-	if  request.action_type == EActionType.ACTION_TYPE_SHOWCARD then --展示牌
+	if  request.action_type == EActionType.ACTION_TYPE_SHOWCARD then
 		if roomtablelogic.is_onegameend(table_data) == false then
 			responsemsg.errcode = EErrCode.ERR_INVALID_REQUEST
 			responsemsg.errcodedes = "无效请求！"
@@ -515,7 +517,9 @@ function TableRequest.doaction(request)
 	end
 
 	base.skynet_retpack(responsemsg)
-	roomtablelogic.doaction(table_data, request, seat)		
+	roomtablelogic.doaction(table_data, request, seat)	
+	msghelper:backup_data()
+
 end
 
 
@@ -567,6 +571,7 @@ function TableRequest.requestsitdown( request )
 			roomsvr_table_address = request.roomsvr_table_address,
 			quest_rolename = request.sitdown_rolename,
 			quest_rid = request.rid,
+			create_table_id = table_data.conf.create_table_id,
 		}
 		 msgproxy.sendrpc_noticemsgto_gatesvrd(online.gatesvr_id,online.gatesvr_service_address, "RequestSitTableNtc", requestsittable)	
 	else

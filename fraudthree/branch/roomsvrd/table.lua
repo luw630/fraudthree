@@ -19,8 +19,7 @@ local Table = serverbase:new({
 		action_type = 0,       --玩家操作类型
 		the_round = 1, 					--是否是首轮
 	}),
-
-	logicmng = require("logicmng")
+	logicmng = require("logicmng"),
 })
 
 function Table:tostring()

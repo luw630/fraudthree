@@ -623,36 +623,6 @@ function RoomGameLogic.onegamestart_initseat(gameobj, seat)
 		tableobj.conf.coin_realize[seat.rid] = 0
 		table.insert(gameobj.tableobj.conf.start_game_player_info, start_seat_info)     --将刚开游戏，一起开始游戏的玩家的rid记录下来
 	end
-	-- --第一轮，入座玩家列表为空
-	-- if #(tableobj.conf.start_game_player_info) == 0 then
-
-	-- 	filelog.sys_info("di yi ci ji lu table shang de  wanjia ")
-	-- 	table.insert(gameobj.tableobj.conf.start_game_player_info, start_seat_info)     --将刚开游戏，一起开始游戏的玩家的rid记录下来
-	-- 	gameobj.tableobj.conf.coin_realize[seat.rid] = 0   --初始化每人的投注记录
-	-- else
-	-- --后续轮，入座列表不为空，选取新ID添加至旧列表
-	-- 	local  tag_new = nil
-	-- 	for i, v in pairs(tableobj.conf.start_game_player_info) do
-	-- 		if v.rid == seat.rid then
-	-- 			tag_new = false
-	-- 		else
-	-- 			tag_new = true
-	-- 		end
-
-	-- 	end
-
-	-- 	if tag_new == true  then 
-	-- 		filelog.sys_info("该玩家已经在桌子玩家列表里面")
-	-- 	end
-
-	-- 	if tag_new == false then
-	-- 		filelog.sys_info("新来了一位玩家")
-	-- 		--新增第一次来这个桌子id的玩家
-	-- 		table.insert(gameobj.tableobj.conf.start_game_player_info, start_seat_info)
-	-- 		gameobj.tableobj.conf.coin_realize[seat.rid] = 0   --初始化每人的投注记录
-	-- 	end 
-	-- end
-    --xj-
 	
 	roomtablelogic.changeMoney(gameobj.tableobj,seat,-gameobj.tableobj.cur_bets,EReasonChangeCurrency.CHANGE_CURRENCY_SYSTEM_GAME) -- --扣除底注   	
 	assert(seat.coin>=0,"onegamestart_initseat coin faile")

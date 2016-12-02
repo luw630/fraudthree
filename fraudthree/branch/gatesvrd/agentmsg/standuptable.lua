@@ -79,7 +79,8 @@ function  StandupTable.process(session, source, fd, request)
 		sex = server.info.sex,
 	}	
 	processing:set_process_state(true)
-	responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, server.roomsvr_id, server.roomsvr_table_address, "standuptable", request)
+	responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, server.roomsvr_id, "gameroom"..request.id, "standuptable", request)
+	--responsemsg = msgproxy.sendrpc_reqmsgto_roomsvrd(nil, server.roomsvr_id, server.roomsvr_table_address, "standuptable", request)
 	processing:set_process_state(false)
 
 	if not msghelper:is_login_success() then

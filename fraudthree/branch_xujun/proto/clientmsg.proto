@@ -1,12 +1,7 @@
 // See README.txt for information and build instructions.
 // syntax = "proto2";
 // 通知消息的后缀用Ntc,请求消息Req,响应消息Res
-enum EMsgType {
-    EMSGTYPE_UNKNOWN = 0;
-    EMSGTYPE_REQUEST = 1;
-    EMSGTYPE_RESPONSE = 2;
-    EMSGTYPE_NOTICE = 3;
-}
+//import "./servermsg.proto";
 
 message ClientMsgHead {
   optional int32 msgtype = 1;
@@ -28,6 +23,7 @@ message GateSvrItem {
 	optional int32 port = 2;
 	optional int32 updatetime = 3;
 	optional int32 onlinenum = 4;
+	optional string gamegates = 5;
 }
 
 message PlayerBaseinfo {
@@ -135,6 +131,8 @@ message GameInfo {
 	optional int32 the_round = 25;     			 //记录当前是第几轮
 	optional int32 game_turns= 26;     			 //记录当前第几圈
 	optional int32 force_overturns= 27;     			 //强制结束的圈数
+	optional int32 table_makers = 28;   				//庄家
+	optional int32 all_bets = 29;   				//当前桌子总投注
 
 }
 
@@ -542,7 +540,7 @@ message ResponseSitTableRes {
 message PlayerGameResultReq {
 	optional Version version = 1;
 	optional int32 rid=2;
-	//optional int32 seachnum = 3;    //滚动式加载
+	optional int32 seachnum = 3;    //滚动式加载
 }
 
 message PlayerGameResultRes {
@@ -683,6 +681,7 @@ message RequestSitTableNtc {
 	optional int32  roomsvr_table_address = 4; //桌子的服务器地址
 	optional string quest_rolename = 5; // 请求的玩家
 	optional int32 quest_rid = 6; // 请求的玩家rid
+	optional int32 create_table_id = 7; //创建的table id
 }
 
 

@@ -129,8 +129,10 @@ function TableRequest.reentertable(request)
 		seat.playerinfo.rolename=request.playerinfo.rolename
 		seat.playerinfo.logo=request.playerinfo.logo
 		seat.playerinfo.sex=request.playerinfo.sex
-
-		filelog.sys_info("reentertable seat",seat)
+		if request.coin ~= seat.getcoin then
+			roomtablelogic.changePlayerMoney(table_data,seat, (seat.getcoin- request.coin),request.coin, seat.getcoin,
+	 EReasonChangeCurrency.CHANGE_CURRENCY_GATESERVERRESTART,0 )
+		end
 	elseif waitinfo ~= nil then
 		waitinfo.gatesvr_id=request.gatesvr_id
 		waitinfo.agent_address = request.agent_address

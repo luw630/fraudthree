@@ -32,11 +32,16 @@ function  Playergameresult.process(session, source, fd, request)
 	end
 	
 	--//多条件查询
-	--local timestart = os.date("%Y-%m").."-01 00:00:00"
+	---xj--增量式--
+	local SeachNum = request.seachnum --请求战绩次数，每滚动一次加1，
+ 	local seachstart = SeachNum * 15
+ 	--xj--增量式--
+
+ 	--local timestart = os.date("%Y-%m").."-01 00:00:00"
 	--local timeend =  os.date("%Y-%m").."-28 00:00:00"
-	local rid = request.rid
+	--local rid = 1000739--request.rid
 	--local condition = "select * from role_resultinfos where((create_time between UNIX_TIMESTAMP('"..timestart.."') and UNIX_TIMESTAMP('"..timeend.."')) and (rid="..rid.."));" --时间格式2016-11-16 19:00:00
-	local condition = "select * from role_resultinfos where rid = '" .. request.rid .. "' limit 0,15"  --此句子
+	local condition = "select * from role_resultinfos where rid = '" ..request.rid.. "'order by update_time desc limit "..seachstart..",15"  --此句子
 	status, info = playerdatadao.query_player_gameresult(request.rid, condition)--获取每局游戏结果，用我的playerID
 	
 	filelog.sys_error("--------------xxxxx--------",status,"info",info)

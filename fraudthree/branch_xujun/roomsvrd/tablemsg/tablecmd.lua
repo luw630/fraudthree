@@ -38,7 +38,7 @@ conf = {
 	....
 }
 ]]
-function TableCMD.start(conf, roomsvr_id, id)
+function TableCMD.start(conf, roomsvr_id, id,create_table_id)
 	if conf == nil or roomsvr_id == nil then
 		filelog.sys_error(filename.."conf == nil or roomsvr_id == nil")
 		base.skynet_retpack(false)
@@ -49,6 +49,10 @@ function TableCMD.start(conf, roomsvr_id, id)
 		conf.id = id
 	end
 
+	if create_table_id ~= nil then
+		conf.create_table_id = create_table_id
+	end
+	
 	local server = msghelper:get_server()
 
 	local roomtablelogic = logicmng.get_logicbyname("roomtablelogic")
@@ -68,8 +72,8 @@ function TableCMD.reload(conf)
 	end
 
 	if conf.version <= table_data.conf.version then
+		filelog.sys_error("conf version error")
 		return
-		filelog.sys_error("version error")
 	end 
 	--TO ADD 添加reload操作
 	table_data.is_reload = true
@@ -98,10 +102,11 @@ function TableCMD.delete(...)
 		
 		for _, seat in ipairs(table_data.seats) do
 			if seat.state > ESeatState.SEAT_STATE_NO_PLAYER then
-				roomtablelogic.passive_standuptable(table_data, seat, EStandupReason.STANDUP_REASON_TABLEDELETE)
+				roomtablelogic.passive_standuptable(table_data, seat, EStandupReason.STANDUP_REASON_TABLEDELETE)  
 			end
 		end
 		local waits = tabletool.deepcopy(table_data.waits)
+
 		for i,v in pairs(waits) do   --旁观
 			roomtablelogic.passive_leavetable(table_data,i,1)
 		end
